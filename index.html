@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#b86c00">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="AI Asistent">
+<title>AI Asistent 🚂</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg:        #f0ece3;
+  --bg2:       #e8e2d6;
+  --surface:   #faf8f4;
+  --surface2:  #f3efe6;
+  --border:    #d8d0c0;
+  --border2:   #c8bea8;
+  --text:      #28200f;
+  --text2:     #5a4e38;
+  --muted:     #9a8e76;
+  --rail:      #b86c00;
+  --rail-l:    #fff4e0;
+  --rail-btn:  #c87800;
+  --invest:    #1a6e3e;
+  --invest-l:  #e8f5ee;
+  --build:     #2e52b8;
+  --build-l:   #eaeeff;
+  --danger:    #b83030;
+  --danger-l:  #ffeaea;
+  --sh:        0 2px 10px rgba(80,60,20,.10);
+  --sh2:       0 4px 20px rgba(80,60,20,.14);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Nunito',sans-serif;
+  min-height:100vh;
+  min-height:100dvh;
+}
+
+/* subtle rail-track lines */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    repeating-linear-gradient(90deg,transparent,transparent 47px,
+      rgba(184,108,0,.05) 47px,rgba(184,108,0,.05) 49px);
+  pointer-events:none;z-index:0;
+}
+
+.app{
+  position:relative;z-index:1;
+  max-width:860px;margin:0 auto;
+  padding:14px 14px 28px;
+  min-height:100dvh;
+  display:flex;flex-direction:column;gap:0;
+}
+
+/* ── HEADER ── */
+header{
+  padding:12px 0 12px;
+  border-bottom:2px solid var(--border);
+  margin-bottom:16px;
+}
+.header-top{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+
+.logo{display:flex;align-items:center;gap:9px;font-size:19px;font-weight:800;letter-spacing:-.3px;}
+.logo-loco{font-size:26px;line-height:1;animation:idle 4s ease-in-out infinite;}
+.logo-loco.moving{animation:chug .45s linear infinite;}
+@keyframes idle{0%,100%{transform:translateX(0);}50%{transform:translateX(3px);}}
+@keyframes chug{
+  0%  {transform:translateX(0)   translateY(0);}
+  25% {transform:translateX(2px) translateY(-1px);}
+  50% {transform:translateX(3px) translateY(0);}
+  75% {transform:translateX(1px) translateY(1px);}
+  100%{transform:translateX(0)   translateY(0);}
+}
+.logo span{color:var(--rail);}
+
+.api-pill{
+  display:flex;align-items:center;gap:7px;
+  font-size:12px;font-weight:700;color:var(--muted);
+  cursor:pointer;padding:6px 13px;
+  border:1.5px solid var(--border);border-radius:20px;
+  background:var(--surface);box-shadow:var(--sh);
+  transition:all .18s;
+}
+.api-pill:hover{border-color:var(--rail);color:var(--rail);}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--danger);flex-shrink:0;}
+.dot.on{background:var(--invest);box-shadow:0 0 0 3px rgba(26,110,62,.2);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(26,110,62,.2);}50%{box-shadow:0 0 0 5px rgba(26,110,62,.07);}}
+
+/* ── TABS ── */
+.tabs{
+  display:flex;gap:3px;margin-bottom:16px;
+  background:var(--surface);padding:4px;
+  border-radius:14px;border:1.5px solid var(--border);
+  box-shadow:var(--sh);
+}
+
+.tab{
+  flex:1;padding:8px 4px;border:none;
+  background:transparent;color:var(--muted);
+  font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;
+  cursor:pointer;border-radius:10px;
+  transition:all .18s;
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.tab:hover{color:var(--text);background:var(--bg2);}
+.tab.active{color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+
+/* Tab locomotive icons */
+.tab-loco{font-size:18px;line-height:1;}
+.tab-label{font-size:10px;font-weight:800;letter-spacing:.2px;}
+
+/* Module colors */
+.tab[data-m="rail"].active   {background:var(--rail);}
+.tab[data-m="invest"].active {background:var(--invest);}
+.tab[data-m="build"].active  {background:var(--build);}
+.tab[data-m="set"].active    {background:var(--text2);}
+
+/* Locomotive badge on active tab */
+.tab[data-m="rail"].active   .tab-loco::after{content:'';}
+
+/* ── PANELS ── */
+.panel{display:none;flex-direction:column;gap:13px;flex:1;}
+.panel.active{display:flex;}
+
+/* ── PDF ZONE ── */
+.pdf-zone{
+  border:2px dashed var(--border2);border-radius:12px;
+  padding:13px 15px;background:var(--surface);
+  transition:all .2s;box-shadow:var(--sh);
+}
+.pdf-zone.dragover{border-color:var(--rail);background:var(--rail-l);}
+.pdf-zone-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+.pdf-zone-title{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;}
+.pdf-list{display:flex;flex-wrap:wrap;gap:5px;min-height:24px;}
+.pdf-tag{
+  display:flex;align-items:center;gap:5px;
+  padding:3px 9px;background:var(--bg2);
+  border:1px solid var(--border);border-radius:20px;
+  font-size:12px;font-weight:700;color:var(--text2);
+}
+.pdf-tag .rm{cursor:pointer;color:var(--muted);font-size:14px;line-height:1;transition:color .15s;}
+.pdf-tag .rm:hover{color:var(--danger);}
+.pdf-empty{font-size:12px;color:var(--muted);font-style:italic;}
+
+.btn-sm{
+  padding:5px 11px;font-size:12px;font-family:'Nunito',sans-serif;font-weight:800;
+  border:1.5px solid var(--border);background:var(--bg2);color:var(--text2);
+  border-radius:8px;cursor:pointer;transition:all .18s;
+}
+.btn-sm:hover{border-color:var(--rail);color:var(--rail);background:var(--rail-l);}
+
+.processing{
+  font-size:12px;color:var(--rail);font-weight:700;
+  margin-top:6px;display:none;align-items:center;gap:6px;
+}
+.processing.on{display:flex;}
+.spin{display:inline-block;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* context bar */
+.ctx-bar{
+  display:none;align-items:center;gap:7px;
+  padding:6px 12px;background:var(--rail-l);
+  border:1px solid rgba(184,108,0,.2);border-radius:8px;
+  font-size:12px;font-weight:700;color:var(--text2);
+}
+.ctx-bar .n{color:var(--rail);}
+
+/* ── CHAT WRAP ── */
+.chat-wrap{
+  flex:1;display:flex;flex-direction:column;
+  background:var(--surface);
+  border:1.5px solid var(--border);border-radius:14px;
+  box-shadow:var(--sh);overflow:hidden;
+  min-height:300px;
+}
+
+.chat-area{
+  flex:1;overflow-y:auto;
+  padding:14px;
+  display:flex;flex-direction:column;gap:13px;
+  scroll-behavior:smooth;
+  max-height:400px;
+}
+.chat-area::-webkit-scrollbar{width:5px;}
+.chat-area::-webkit-scrollbar-track{background:var(--bg2);}
+.chat-area::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+
+/* ── MESSAGES ── */
+.msg{display:flex;flex-direction:column;gap:4px;animation:msgIn .2s ease;}
+@keyframes msgIn{from{opacity:0;transform:translateY(7px);}to{opacity:1;transform:translateY(0);}}
+
+.msg-head{display:flex;align-items:center;gap:6px;}
+.msg-av{
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;
+}
+.msg.user   .msg-av{background:var(--bg2);border:1px solid var(--border);}
+.msg.ai     .msg-av{background:var(--rail-l);border:1px solid rgba(184,108,0,.25);}
+.msg.ai[data-m="invest"] .msg-av{background:var(--invest-l);border-color:rgba(26,110,62,.25);}
+.msg.ai[data-m="build"]  .msg-av{background:var(--build-l); border-color:rgba(46,82,184,.25);}
+
+.msg-lbl{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.msg-time{font-size:10px;color:var(--muted);margin-left:2px;}
+
+.msg-bubble{
+  padding:10px 14px;border-radius:12px;
+  font-size:14px;line-height:1.68;
+  white-space:pre-wrap;word-break:break-word;
+}
+
+/* user bubble — right aligned */
+.msg.user{align-items:flex-end;}
+.msg.user .msg-bubble{
+  background:var(--bg2);border:1px solid var(--border);
+  color:var(--text);max-width:80%;
+  border-bottom-right-radius:4px;
+}
+
+/* ai bubble — scrollable */
+.msg.ai .msg-bubble{
+  background:var(--rail-l);
+  border:1px solid rgba(184,108,0,.18);
+  color:var(--text);
+  max-height:300px;overflow-y:auto;
+  border-bottom-left-radius:4px;
+}
+.msg.ai .msg-bubble::-webkit-scrollbar{width:4px;}
+.msg.ai .msg-bubble::-webkit-scrollbar-track{background:rgba(184,108,0,.08);border-radius:2px;}
+.msg.ai .msg-bubble::-webkit-scrollbar-thumb{background:rgba(184,108,0,.35);border-radius:2px;}
+
+.msg.ai[data-m="invest"] .msg-bubble{background:var(--invest-l);border-color:rgba(26,110,62,.18);}
+.msg.ai[data-m="invest"] .msg-bubble::-webkit-scrollbar-thumb{background:rgba(26,110,62,.35);}
+.msg.ai[data-m="build"]  .msg-bubble{background:var(--build-l); border-color:rgba(46,82,184,.18);}
+.msg.ai[data-m="build"]  .msg-bubble::-webkit-scrollbar-thumb{background:rgba(46,82,184,.35);}
+
+.msg.sys .msg-bubble{
+  background:transparent;border:none;
+  color:var(--muted);font-size:12px;font-style:italic;
+  padding:2px 0;text-align:center;
+}
+.msg.err .msg-bubble{
+  background:var(--danger-l);border:1px solid rgba(184,48,48,.2);
+  color:var(--danger);font-size:13px;
+}
+
+/* ── TYPING ── */
+.typing-wrap{
+  display:flex;align-items:center;gap:6px;
+  padding:11px 15px;
+  background:var(--rail-l);border:1px solid rgba(184,108,0,.18);
+  border-radius:12px;border-bottom-left-radius:4px;
+  width:fit-content;
+}
+.t-loco{font-size:17px;animation:chug .5s linear infinite;}
+.t-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--rail);
+  animation:tb 1.3s infinite;
+}
+.t-dot:nth-child(3){animation-delay:.18s;}
+.t-dot:nth-child(4){animation-delay:.36s;}
+@keyframes tb{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-6px);opacity:1;}}
+
+/* ── QUICK PROMPTS ── */
+.quick{
+  display:flex;flex-wrap:wrap;gap:5px;
+  padding:9px 14px 11px;
+  border-top:1px solid var(--border);
+  background:var(--surface2);
+}
+.q-btn{
+  padding:4px 11px;font-size:12px;font-family:'Nunito',sans-serif;font-weight:700;
+  border:1.5px solid var(--border2);background:var(--surface);color:var(--text2);
+  border-radius:20px;cursor:pointer;transition:all .16s;
+}
+.q-btn:hover{background:var(--rail-l);border-color:var(--rail);color:var(--rail);}
+
+/* ── INPUT ── */
+.inp-area{
+  display:flex;gap:7px;align-items:flex-end;
+  padding:10px 14px 12px;
+  background:var(--surface);
+  border-top:1.5px solid var(--border);
+}
+textarea{
+  flex:1;padding:9px 13px;
+  background:var(--bg2);border:1.5px solid var(--border);
+  border-radius:10px;color:var(--text);
+  font-family:'Nunito',sans-serif;font-size:14px;font-weight:600;
+  resize:none;min-height:42px;max-height:110px;
+  line-height:1.5;transition:border-color .18s,box-shadow .18s;overflow-y:auto;
+}
+textarea:focus{outline:none;border-color:var(--rail);box-shadow:0 0 0 3px rgba(184,108,0,.12);background:var(--surface);}
+textarea::placeholder{color:var(--muted);}
+
+.send{
+  width:42px;height:42px;border:none;border-radius:10px;
+  color:#fff;font-size:17px;cursor:pointer;
+  transition:all .17s;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.send[data-m="rail"]  {background:var(--rail);  box-shadow:0 2px 8px rgba(184,108,0,.35);}
+.send[data-m="invest"]{background:var(--invest); box-shadow:0 2px 8px rgba(26,110,62,.3);}
+.send[data-m="build"] {background:var(--build);  box-shadow:0 2px 8px rgba(46,82,184,.3);}
+.send:hover{transform:scale(1.07);filter:brightness(1.08);}
+.send:active{transform:scale(.97);}
+.send:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+
+/* ── SETTINGS ── */
+.set-group{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:14px;padding:18px 20px;box-shadow:var(--sh);
+}
+.set-group h3{font-size:15px;font-weight:800;margin-bottom:14px;color:var(--text);}
+.set-row{display:flex;flex-direction:column;gap:5px;margin-bottom:13px;}
+.set-row:last-child{margin-bottom:0;}
+.set-lbl{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;}
+.set-inp{
+  padding:9px 12px;background:var(--bg2);
+  border:1.5px solid var(--border);border-radius:9px;
+  color:var(--text);font-family:'Nunito',sans-serif;font-size:14px;font-weight:600;
+  width:100%;transition:border-color .18s;
+}
+.set-inp:focus{outline:none;border-color:var(--rail);}
+.btn-save{
+  padding:11px;background:var(--rail);color:#fff;border:none;
+  border-radius:10px;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;
+  cursor:pointer;width:100%;margin-top:4px;
+  box-shadow:0 2px 8px rgba(184,108,0,.25);transition:all .18s;
+}
+.btn-save:hover{filter:brightness(1.08);transform:translateY(-1px);}
+.save-ok{font-size:13px;font-weight:700;color:var(--invest);text-align:center;margin-top:7px;display:none;}
+.save-ok.on{display:block;}
+.info{font-size:13px;color:var(--text2);line-height:1.9;font-weight:600;}
+.info strong{color:var(--text);}
+.info .hl{color:var(--rail);font-weight:800;}
+
+/* hint box */
+.hint{
+  padding:11px 14px;background:var(--invest-l);
+  border:1px solid rgba(26,110,62,.2);border-left:3px solid var(--invest);
+  border-radius:10px;font-size:13px;font-weight:700;color:var(--text2);line-height:1.6;
+}
+
+/* markdown rendering */
+.msg-bubble h1,.msg-bubble h2,.msg-bubble h3{font-size:14px;font-weight:800;margin:8px 0 4px;color:var(--text);}
+.msg-bubble h3{font-size:13px;}
+.msg-bubble p{margin:0 0 6px;}
+.msg-bubble p:last-child{margin:0;}
+.msg-bubble ul,.msg-bubble ol{padding-left:18px;margin:4px 0 6px;}
+.msg-bubble li{margin:2px 0;}
+.msg-bubble strong{font-weight:800;}
+.msg-bubble em{font-style:italic;}
+.msg-bubble code{background:rgba(0,0,0,.08);padding:1px 5px;border-radius:4px;font-family:'DM Mono',monospace;font-size:12px;}
+.msg-bubble pre{background:rgba(0,0,0,.08);padding:8px 10px;border-radius:6px;overflow-x:auto;margin:6px 0;}
+.msg-bubble pre code{background:none;padding:0;}
+.msg-bubble table{border-collapse:collapse;width:100%;margin:6px 0;font-size:12px;}
+.msg-bubble th,.msg-bubble td{border:1px solid var(--border);padding:4px 8px;text-align:left;}
+.msg-bubble th{background:var(--bg2);font-weight:800;}
+.msg-bubble hr{border:none;border-top:1px solid var(--border);margin:8px 0;}
+.msg-bubble a{color:var(--rail);text-decoration:underline;}
+
+.divider{
+  text-align:center;font-size:11px;color:var(--muted);font-weight:700;padding:4px 0;
+  position:relative;
+}
+.divider::before,.divider::after{
+  content:'';position:absolute;top:50%;
+  width:36%;height:1px;background:var(--border);
+}
+.divider::before{left:0;}.divider::after{right:0;}
+
+/* PWA banner */
+.pwa{
+  display:none;align-items:center;gap:9px;
+  padding:9px 13px;background:var(--rail-l);
+  border:1px solid rgba(184,108,0,.22);border-radius:10px;
+  font-size:13px;font-weight:700;color:var(--text2);
+  margin-bottom:12px;
+}
+.pwa.on{display:flex;}
+.pwa-btn{
+  margin-left:auto;padding:5px 12px;
+  color:#fff;border:none;border-radius:7px;
+  font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;cursor:pointer;
+}
+
+@media(max-width:540px){
+  .app{padding:8px 8px 20px;}
+  .tab-label{font-size:9px;}
+  .tab-loco{font-size:16px;}
+  .msg-bubble{font-size:13px;}
+  .chat-area{max-height:350px;}
+  .msg.ai .msg-bubble{max-height:240px;}
+  .logo{font-size:17px;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- PWA banner -->
+  <div class="pwa" id="pwaBanner">
+    🚂 Nainstalovat jako aplikaci?
+    <button class="pwa-btn" style="background:var(--rail)" onclick="installPWA()">Instalovat</button>
+    <button class="pwa-btn" style="background:var(--muted)" onclick="this.closest('.pwa').classList.remove('on')">Ne</button>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="header-top">
+      <div class="logo">
+        <span class="logo-loco" id="logoLoco">🚂</span>
+        AI<span>.</span>Asistent
+      </div>
+      <div class="api-pill" onclick="switchPanel('set')">
+        <div class="dot" id="statusDot"></div>
+        <span id="statusTxt">Nastavit API</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tabs with locomotive icons -->
+  <div class="tabs">
+    <button class="tab active" data-m="rail" onclick="switchPanel('rail')">
+      <span class="tab-loco">🚂</span>
+      <span class="tab-label">Předpisy</span>
+    </button>
+    <button class="tab" data-m="invest" onclick="switchPanel('invest')">
+      <span class="tab-loco">🚃</span>
+      <span class="tab-label">Investice</span>
+    </button>
+    <button class="tab" data-m="build" onclick="switchPanel('build')">
+      <span class="tab-loco">🚧</span>
+      <span class="tab-label">Stavba</span>
+    </button>
+    <button class="tab" data-m="set" onclick="switchPanel('set')">
+      <span class="tab-loco">⚙️</span>
+      <span class="tab-label">API</span>
+    </button>
+  </div>
+
+  <!-- ═══════ PŘEDPISY ═══════ -->
+  <div class="panel active" id="panel-rail">
+    <div class="pdf-zone"
+      ondragover="dOver(event)" ondragleave="dLeave(event)" ondrop="dDrop(event,'rail')">
+      <div class="pdf-zone-head">
+        <div class="pdf-zone-title">📄 Předpisy ČD / SŽDC (PDF)</div>
+        <button class="btn-sm" onclick="document.getElementById('fi-rail').click()">+ Přidat PDF</button>
+      </div>
+      <div class="pdf-list" id="pl-rail"><span class="pdf-empty">Přetáhni nebo přidej PDF předpisy</span></div>
+      <div class="processing" id="proc-rail"><span class="spin">⏳</span> Zpracovávám PDF…</div>
+    </div>
+    <input type="file" id="fi-rail" accept=".pdf" multiple style="display:none" onchange="handleFiles(this.files,'rail')">
+
+    <div class="ctx-bar" id="ctx-rail">📚 Načteno: <span class="n" id="ctn-rail">0</span> znaků</div>
+
+    <div class="chat-wrap">
+      <div class="chat-area" id="chat-rail">
+        <div class="msg sys"><div class="msg-bubble">🚂 Nahraj PDF předpisy a ptej se. Odpověď vždy s odkazem na konkrétní část předpisu.</div></div>
+      </div>
+      <div class="quick">
+        <button class="q-btn" onclick="setQ('rail','Můžu jet za místo zastavení když vidím návěst Stůj?')">místo zastavení + Stůj</button>
+        <button class="q-btn" onclick="setQ('rail','Podmínky jízdy při výpadku ETCS')">výpadek ETCS</button>
+        <button class="q-btn" onclick="setQ('rail','Postup při poruše brzdy')">porucha brzdy</button>
+        <button class="q-btn" onclick="setQ('rail','Kdy zastavit před vjezdovým návěstidlem?')">vjezdové návěstidlo</button>
+      </div>
+      <div class="inp-area">
+        <textarea id="q-rail" placeholder="Dotaz k předpisům…" rows="1"
+          onkeydown="hKey(event,'rail')" oninput="aResize(this)"></textarea>
+        <button class="send" data-m="rail" id="send-rail" onclick="send('rail')" disabled>➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ INVESTICE ═══════ -->
+  <div class="panel" id="panel-invest">
+    <div class="hint">💡 Popiš portfolio nebo vlož data — AI analyzuje dluhopisy, akcie, dividendy a rizika.</div>
+    <div class="pdf-zone"
+      ondragover="dOver(event)" ondragleave="dLeave(event)" ondrop="dDrop(event,'invest')">
+      <div class="pdf-zone-head">
+        <div class="pdf-zone-title">📄 Dokumenty (prospekty, výroční zprávy)</div>
+        <button class="btn-sm" onclick="document.getElementById('fi-invest').click()">+ Přidat PDF</button>
+      </div>
+      <div class="pdf-list" id="pl-invest"><span class="pdf-empty">Volitelné — prospekt dluhopisu, výroční zpráva</span></div>
+      <div class="processing" id="proc-invest"><span class="spin">⏳</span> Zpracovávám…</div>
+    </div>
+    <input type="file" id="fi-invest" accept=".pdf" multiple style="display:none" onchange="handleFiles(this.files,'invest')">
+
+    <div class="chat-wrap">
+      <div class="chat-area" id="chat-invest">
+        <div class="msg sys"><div class="msg-bubble">🚃 Ptej se na akcie, dluhopisy, dividendy a analýzu portfolia.</div></div>
+      </div>
+      <div class="quick">
+        <button class="q-btn" onclick="setQ('invest','Porovnej CTP a Accolade — riziko a výnos')">CTP vs Accolade</button>
+        <button class="q-btn" onclick="setQ('invest','Zhodnoť MAIN jako dividendovou BDC akcii')">MAIN analýza</button>
+        <button class="q-btn" onclick="setQ('invest','Rizika BDC sektoru 2025')">BDC rizika</button>
+        <button class="q-btn" onclick="setQ('invest','Porovnej PFLT a HTGC')">PFLT vs HTGC</button>
+      </div>
+      <div class="inp-area">
+        <textarea id="q-invest" placeholder="Dotaz k investicím…" rows="1"
+          onkeydown="hKey(event,'invest')" oninput="aResize(this)"></textarea>
+        <button class="send" data-m="invest" id="send-invest" onclick="send('invest')" disabled>➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ STAVBA ═══════ -->
+  <div class="panel" id="panel-build">
+    <div class="pdf-zone"
+      ondragover="dOver(event)" ondragleave="dLeave(event)" ondrop="dDrop(event,'build')">
+      <div class="pdf-zone-head">
+        <div class="pdf-zone-title">📄 Dokumenty (výkresy, normy ČSN)</div>
+        <button class="btn-sm" onclick="document.getElementById('fi-build').click()">+ Přidat PDF</button>
+      </div>
+      <div class="pdf-list" id="pl-build"><span class="pdf-empty">Volitelné — výkres nebo stavební norma</span></div>
+      <div class="processing" id="proc-build"><span class="spin">⏳</span> Zpracovávám…</div>
+    </div>
+    <input type="file" id="fi-build" accept=".pdf" multiple style="display:none" onchange="handleFiles(this.files,'build')">
+
+    <div class="chat-wrap">
+      <div class="chat-area" id="chat-build">
+        <div class="msg sys"><div class="msg-bubble">🚧 Ptej se na garáž, zimní zahradu, terasu — konstrukční řešení, materiály, normy ČSN.</div></div>
+      </div>
+      <div class="quick">
+        <button class="q-btn" onclick="setQ('build','Průvlak pro otvor 3m v nosné zdi tl. 30cm?')">průvlak nosná zeď</button>
+        <button class="q-btn" onclick="setQ('build','Zatížení dřevěné terasy nad garáží')">terasa nad garáží</button>
+        <button class="q-btn" onclick="setQ('build','Základy pro zimní zahradu — kdy vlastní základ?')">základy zimní zahrada</button>
+      </div>
+      <div class="inp-area">
+        <textarea id="q-build" placeholder="Dotaz ke stavbě…" rows="1"
+          onkeydown="hKey(event,'build')" oninput="aResize(this)"></textarea>
+        <button class="send" data-m="build" id="send-build" onclick="send('build')" disabled>➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ NASTAVENÍ ═══════ -->
+  <div class="panel" id="panel-set">
+    <div class="set-group">
+      <h3>🔑 Claude API klíč</h3>
+      <div class="set-row">
+        <div class="set-lbl">API Klíč</div>
+        <input type="password" class="set-inp" id="apiKey" placeholder="sk-ant-api03-…" autocomplete="off">
+      </div>
+      <div class="set-row">
+        <div class="set-lbl">Model</div>
+        <select class="set-inp" id="modelSel">
+          <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 — nejrychlejší, nejlevnější ✓</option>
+          <option value="claude-sonnet-4-5">Claude Sonnet 4.5 — lepší reasoning</option>
+        </select>
+      </div>
+      <button class="btn-save" onclick="saveSet()">💾 Uložit nastavení</button>
+      <div class="save-ok" id="saveOk">✓ Uloženo — API aktivní</div>
+    </div>
+
+    <div class="set-group">
+      <h3>📖 Jak získat API klíč</h3>
+      <div class="info">
+        1. Jdi na <strong>console.anthropic.com</strong><br>
+        2. Vytvoř účet → přidej platební kartu<br>
+        3. Vlož kredit <span class="hl">$5</span> — vydrží měsíce<br>
+        4. API Keys → Create API Key<br>
+        5. Zkopíruj klíč sem → Uložit<br><br>
+        <strong style="color:var(--invest)">Tip:</strong> V konzoli nastav měsíční limit $2.
+      </div>
+    </div>
+
+    <div class="set-group">
+      <h3>🗑️ Data</h3>
+      <div style="display:flex;flex-direction:column;gap:7px;">
+        <button class="btn-sm" style="padding:10px;text-align:center;" onclick="clearHistory()">Vymazat historii chatů</button>
+        <button class="btn-sm" style="padding:10px;text-align:center;color:var(--danger);border-color:var(--danger);" onclick="clearAll()">Vymazat vše včetně PDF</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- .app -->
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+if(typeof marked !== 'undefined'){
+  marked.setOptions({ breaks: true, gfm: true });
+}
+
+// ── STATE ──
+const S = {
+  key:'', model:'claude-haiku-4-5-20251001',
+  pdfs:{rail:[],invest:[],build:[]},
+  chats:{rail:[],invest:[],build:[]},
+  busy:false
+};
+
+const HKEYS = {rail:'h_rail', invest:'h_invest', build:'h_build'};
+
+const SYS = {
+  rail:`Jsi odborný asistent pro železniční předpisy České dráhy (ČD) a SŽDC. Odpovídáš česky, přesně a srozumitelně.
+Pokud máš v kontextu text předpisů, VŽDY uveď odkud odpověď pochází (název předpisu, číslo článku/odstavce).
+Pokud si nejsi jistý, jasně to řekni — jde o bezpečnostní provoz. Kombinuj více předpisů pokud je to potřeba.`,
+  invest:`Jsi zkušený investiční analytik. Odpovídáš česky, analyticky a věcně.
+Specializuješ se na dividendové akcie (BDC: MAIN, PFLT, ARCC, CSWC, HTGC; REIT: O, WPC, OHI, VICI) a české dluhopisy (CTP, Accolade, KKCG, J&T BANKA, MONETA, státní dluhopisy).
+Poskytuj konkrétní analýzy. Připomeň že nejsi licencovaný finanční poradce.
+
+METODIKA HODNOCENÍ ČESKÝCH DLUHOPISŮ (dle Dluhopisář.cz + expertní korekce):
+Scoring max 31.5 b → přepočítej na /10:
+1. Transparentnost (max 10 b): prospekt CNB, audit Big4, výkazy, věk EMITENTA (ne skupiny), tržby skupiny, vývoj tržeb, zadlužení
+2. Finanční ukazatele (max 9.5 b): úrokové krytí, Dluh/EBITDA, EBITDA marže, provozní CF, ROA, čistý PK
+3. Odvětví (max 0.5 b): stabilní/defenzivní +0.5, rizikové -0.5
+4. Kovenanty (max 7 b): distribuce velké banky +1.5, fin. kovenanty, cross-default, neg. závazek, pari passu, CoC, omezení dividend, reporting, zelené dluhopisy
+5. Zajištění (max 4.5 b): přímá nemovitostní zástava nejvyšší, firemní záruka nejnižší
+
+KRITICKÉ KOREKCE (povinné):
+- SPV emitent (prázdná schránka): Finanční ukazatele max 4/9.5, Transparentnost -2 body, označ jako ⚠ SPV
+- Distribuce vlastní bankou skupiny = KONFLIKT ZÁJMŮ = 0 bodů (ne +1.5)
+- Firemní záruka korelovaná se skupinou = penalizuj -0.5 až -1 bod za korelaci
+- Kovenantní strop Net Debt/EBITDA >5x = iluzorní ochrana = -0.5 bodu
+- Počítej věk EMITENTA, nikdy ne skupiny
+
+Výsledek uváděj strukturovaně: celkové skóre /10, verdikt, doporučení (KOUPIT / WATCHLIST / ODMÍTNOUT), YTM orientační pokud znáš cenu, klíčová rizika a pozitiva.`,
+  build:`Jsi stavební poradce se znalostí ČSN norem. Odpovídáš česky, prakticky a technicky přesně.
+Specializuješ se na rodinné stavby — garáže, přístavby, zimní zahrady, terasy, nosné konstrukce.
+Vždy uveď kdy je nutný statik nebo stavební povolení.`
+};
+
+// ── INDEXEDDB ──
+let DB = null;
+const DB_NAME = 'aiasistent', DB_VER = 1, DB_STORE = 'pdfs';
+
+function openDB(){
+  return new Promise((res,rej)=>{
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(DB_STORE,{keyPath:'id'});
+    req.onsuccess = e => { DB = e.target.result; res(DB); };
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+function dbSavePdf(m, name, text){
+  if(!DB) return;
+  const id = `${m}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  const tx = DB.transaction(DB_STORE,'readwrite');
+  tx.objectStore(DB_STORE).put({id, m, name, text, ts: Date.now()});
+}
+
+function dbDeletePdf(m, name){
+  if(!DB) return;
+  const tx = DB.transaction(DB_STORE,'readonly');
+  const req = tx.objectStore(DB_STORE).getAll();
+  req.onsuccess = ()=>{
+    const rows = req.result || [];
+    const match = rows.find(r=>r.m===m && r.name===name);
+    if(match){
+      const tx2 = DB.transaction(DB_STORE,'readwrite');
+      tx2.objectStore(DB_STORE).delete(match.id);
+    }
+  };
+}
+
+function dbClearAll(){
+  if(!DB) return Promise.resolve();
+  return new Promise(res=>{
+    const tx = DB.transaction(DB_STORE,'readwrite');
+    tx.objectStore(DB_STORE).clear();
+    tx.oncomplete = res;
+  });
+}
+
+async function dbLoadAll(){
+  if(!DB) return;
+  return new Promise(res=>{
+    const tx = DB.transaction(DB_STORE,'readonly');
+    const req = tx.objectStore(DB_STORE).getAll();
+    req.onsuccess = ()=>{
+      const rows = (req.result||[]).sort((a,b)=>a.ts-b.ts);
+      rows.forEach(r=>{ if(S.pdfs[r.m]) S.pdfs[r.m].push({name:r.name, text:r.text}); });
+      ['rail','invest','build'].forEach(m=>{ renderPdfs(m); updateCtx(m); });
+      res();
+    };
+    req.onerror = res;
+  });
+}
+
+// ── INIT ──
+async function init(){
+  S.key   = localStorage.getItem('ai_key')   || '';
+  S.model = localStorage.getItem('ai_model') || 'claude-haiku-4-5-20251001';
+  document.getElementById('apiKey').value   = S.key;
+  document.getElementById('modelSel').value = S.model;
+  updateDot();
+  ['rail','invest','build'].forEach(loadHistory);
+  try{ await openDB(); await dbLoadAll(); }catch(e){ console.warn('IndexedDB nedostupné',e); }
+}
+
+function updateDot(){
+  const ok = S.key.startsWith('sk-ant');
+  document.getElementById('statusDot').classList.toggle('on', ok);
+  document.getElementById('statusTxt').textContent = ok ? 'API aktivní' : 'Nastavit API';
+  ['rail','invest','build'].forEach(m =>
+    document.getElementById('send-'+m).disabled = !ok
+  );
+}
+
+// ── SETTINGS ──
+function saveSet(){
+  S.key   = document.getElementById('apiKey').value.trim();
+  S.model = document.getElementById('modelSel').value;
+  localStorage.setItem('ai_key',   S.key);
+  localStorage.setItem('ai_model', S.model);
+  updateDot();
+  const el = document.getElementById('saveOk');
+  el.classList.add('on');
+  setTimeout(()=>el.classList.remove('on'), 3000);
+}
+
+// ── PANELS ──
+function switchPanel(name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.querySelector(`.tab[data-m="${name}"]`).classList.add('active');
+}
+
+// ── HISTORY ──
+function saveHistory(m){
+  try{ localStorage.setItem(HKEYS[m], JSON.stringify(S.chats[m].slice(-60))); }catch(e){}
+}
+
+function loadHistory(m){
+  try{
+    const raw = localStorage.getItem(HKEYS[m]);
+    if(!raw) return;
+    const hist = JSON.parse(raw);
+    if(!hist.length) return;
+    S.chats[m] = hist;
+    const chat = document.getElementById('chat-'+m);
+    addSys(m,'— Dřívější konverzace —');
+    hist.forEach(msg=>{
+      if(msg.role==='user') addBubble(m,'user',msg.content,msg.t);
+      else if(msg.role==='assistant') addBubble(m,'ai',msg.content,msg.t);
+    });
+    chat.scrollTop = chat.scrollHeight;
+  }catch(e){}
+}
+
+// ── PDF ──
+async function handleFiles(files,m){
+  const proc = document.getElementById('proc-'+m);
+  proc.classList.add('on');
+  for(const f of files){
+    if(!f.name.toLowerCase().endsWith('.pdf')) continue;
+    if(S.pdfs[m].find(p=>p.name===f.name)) continue; // dedup
+    try{
+      const text = await extractPdf(f);
+      S.pdfs[m].push({name:f.name, text});
+      dbSavePdf(m, f.name, text);
+      renderPdfs(m); updateCtx(m);
+    }catch(e){ alert('Chyba: '+f.name); }
+  }
+  proc.classList.remove('on');
+}
+
+async function extractPdf(file){
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+  let txt = '';
+  for(let i=1;i<=pdf.numPages;i++){
+    const pg = await pdf.getPage(i);
+    const ct = await pg.getTextContent();
+    txt += ct.items.map(s=>s.str).join(' ')+'\n';
+  }
+  return txt;
+}
+
+function renderPdfs(m){
+  const el = document.getElementById('pl-'+m);
+  if(!S.pdfs[m].length){ el.innerHTML='<span class="pdf-empty">Zatím žádné soubory</span>'; return; }
+  el.innerHTML = S.pdfs[m].map((p,i)=>`
+    <div class="pdf-tag">📄 ${p.name.substring(0,22)}${p.name.length>22?'…':''}
+      <span class="rm" onclick="rmPdf('${m}',${i})">×</span>
+    </div>`).join('');
+}
+
+function rmPdf(m,i){
+  const name = S.pdfs[m][i]?.name;
+  S.pdfs[m].splice(i,1);
+  if(name) dbDeletePdf(m, name);
+  renderPdfs(m); updateCtx(m);
+}
+
+function updateCtx(m){
+  const bar = document.getElementById('ctx-'+m);
+  const num = document.getElementById('ctn-'+m);
+  const tot = S.pdfs[m].reduce((s,p)=>s+p.text.length,0);
+  if(bar){ bar.style.display = tot>0?'flex':'none'; }
+  if(num) num.textContent = tot.toLocaleString('cs');
+}
+
+// ── DRAG & DROP ──
+function dOver(e) { e.preventDefault(); e.currentTarget.classList.add('dragover'); }
+function dLeave(e){ e.currentTarget.classList.remove('dragover'); }
+function dDrop(e,m){ e.preventDefault(); e.currentTarget.classList.remove('dragover'); handleFiles(e.dataTransfer.files,m); }
+
+// ── CHAT UI ──
+function setQ(m,t){ const ta=document.getElementById('q-'+m); ta.value=t; aResize(ta); ta.focus(); }
+function hKey(e,m){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(m); }}
+function aResize(ta){ ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,110)+'px'; }
+
+function nowT(){ return new Date().toLocaleTimeString('cs',{hour:'2-digit',minute:'2-digit'}); }
+
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+const AV = {rail:'🚂', invest:'🚃', build:'🚧'};
+
+function addBubble(m, role, text, t){
+  const chat = document.getElementById('chat-'+m);
+  const div  = document.createElement('div');
+  const time = t || nowT();
+  div.className = 'msg ' + role;
+  if(role==='ai') div.setAttribute('data-m', m);
+  if(role==='user'){
+    div.innerHTML=`
+      <div class="msg-head">
+        <div class="msg-av">👤</div>
+        <div class="msg-lbl">Ty</div>
+        <div class="msg-time">${time}</div>
+      </div>
+      <div class="msg-bubble">${esc(text)}</div>`;
+  } else {
+    div.innerHTML=`
+      <div class="msg-head">
+        <div class="msg-av">${AV[m]||'🤖'}</div>
+        <div class="msg-lbl">AI</div>
+        <div class="msg-time">${time}</div>
+      </div>
+      <div class="msg-bubble">${typeof marked !== 'undefined' ? marked.parse(text) : esc(text)}</div>`;
+  }
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+function addSys(m, txt){
+  const chat = document.getElementById('chat-'+m);
+  const div  = document.createElement('div');
+  div.className = 'msg sys';
+  div.innerHTML = `<div class="msg-bubble divider">${esc(txt)}</div>`;
+  chat.appendChild(div);
+}
+
+function addTyping(m){
+  const chat = document.getElementById('chat-'+m);
+  const div  = document.createElement('div');
+  div.className = 'msg ai typing';
+  div.setAttribute('data-m', m);
+  div.innerHTML=`
+    <div class="msg-head">
+      <div class="msg-av">${AV[m]||'🤖'}</div>
+      <div class="msg-lbl">AI</div>
+    </div>
+    <div class="typing-wrap">
+      <span class="t-loco">${AV[m]||'🚂'}</span>
+      <div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div>
+    </div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  document.getElementById('logoLoco').classList.add('moving');
+  return div;
+}
+
+// ── SEND ──
+async function send(m){
+  if(S.busy) return;
+  if(!S.key){ switchPanel('set'); return; }
+  const ta = document.getElementById('q-'+m);
+  const q  = ta.value.trim();
+  if(!q) return;
+
+  ta.value=''; aResize(ta);
+  S.busy = true;
+  document.getElementById('send-'+m).disabled = true;
+
+  const t = nowT();
+  addBubble(m,'user',q,t);
+  S.chats[m].push({role:'user', content:q, t});
+
+  const typing = addTyping(m);
+
+  try{
+    // PDF context
+    let ctx = '';
+    if(S.pdfs[m].length){
+      let combined = S.pdfs[m].map(p=>`=== ${p.name} ===\n${p.text}`).join('\n\n');
+      if(combined.length>80000) combined=combined.substring(0,80000)+'\n…[zkráceno]';
+      ctx = '\n\nDOSTUPNÉ DOKUMENTY:\n'+combined;
+    }
+
+    const messages = S.chats[m].slice(-20).map(x=>({role:x.role, content:x.content}));
+
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': S.key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model: S.model,
+        max_tokens: 2500,
+        system: SYS[m]+ctx,
+        messages
+      })
+    });
+
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      throw new Error(err.error?.message||'API chyba '+res.status);
+    }
+
+    const data  = await res.json();
+    const reply = data.content[0]?.text || '(prázdná odpověď)';
+    const rt    = nowT();
+
+    typing.remove();
+    addBubble(m,'ai',reply,rt);
+    S.chats[m].push({role:'assistant', content:reply, t:rt});
+    saveHistory(m);
+
+  }catch(e){
+    typing.remove();
+    const chat = document.getElementById('chat-'+m);
+    const div  = document.createElement('div');
+    div.className='msg err';
+    div.innerHTML=`<div class="msg-bubble">⚠️ ${esc(e.message)}</div>`;
+    chat.appendChild(div);
+    chat.scrollTop=chat.scrollHeight;
+  }
+
+  S.busy = false;
+  document.getElementById('logoLoco').classList.remove('moving');
+  document.getElementById('send-'+m).disabled = !S.key.startsWith('sk-ant');
+}
+
+// ── CLEAR ──
+function clearHistory(){
+  if(!confirm('Vymazat historii chatů?')) return;
+  ['rail','invest','build'].forEach(m=>{
+    S.chats[m]=[]; localStorage.removeItem(HKEYS[m]);
+    document.getElementById('chat-'+m).innerHTML='';
+    addSys(m,'Historie vymazána.');
+  });
+}
+
+async function clearAll(){
+  if(!confirm('Vymazat vše včetně PDF?')) return;
+  await dbClearAll();
+  ['rail','invest','build'].forEach(m=>{
+    S.pdfs[m]=[]; S.chats[m]=[];
+    localStorage.removeItem(HKEYS[m]);
+    renderPdfs(m); updateCtx(m);
+    document.getElementById('chat-'+m).innerHTML='';
+    addSys(m,'Vše vymazáno.');
+  });
+}
+
+// ── PWA ──
+let dPr = null;
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault(); dPr = e;
+  document.getElementById('pwaBanner').classList.add('on');
+});
+function installPWA(){
+  if(!dPr) return;
+  dPr.prompt();
+  dPr.userChoice.then(()=>{ dPr=null; document.getElementById('pwaBanner').classList.remove('on'); });
+}
+
+// Service worker (inline blob)
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    const sw=`const C='aias-v1';const A=['./'];
+self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(A))));
+self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));`;
+    const url=URL.createObjectURL(new Blob([sw],{type:'application/javascript'}));
+    navigator.serviceWorker.register(url).catch(()=>{});
+  });
+}
+
+init();
+</script>
+</body>
+</html>
